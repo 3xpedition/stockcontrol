@@ -176,7 +176,7 @@ class InventoryController extends Controller
     {
         $term = trim((string) $request->query('q', ''));
         $products = Product::query()
-            ->select(['id', 'code', 'barcode', 'name', 'quantity', 'unit', 'ncm', 'cfop'])
+            ->select(['id', 'code', 'barcode', 'name', 'quantity', 'unit', 'ncm', 'cfop', 'cest'])
             ->when($term, fn ($query) => $query->where(function ($query) use ($term) {
                 $query->where('name', 'like', "%{$term}%")
                     ->orWhere('code', 'like', "%{$term}%")
@@ -201,17 +201,22 @@ class InventoryController extends Controller
             'selected_tokens.*' => ['required', 'string'],
             'ncm' => ['nullable', 'string', 'max:20'],
             'cfop' => ['nullable', 'integer', 'between:0,9999'],
+            'cest' => ['nullable', 'integer', 'between:0,99999999'],
         ]);
+
+        if (filled($data['cest'] ?? null) && (string) ($data['cfop'] ?? '') !== '5405') {
+            return back()->withInput()->withErrors([
+                'cest' => 'O CEST só pode ser aplicado quando o CFOP informado for 5405.',
+            ]);
+        }
 
         $updated = DB::transaction(function () use ($data) {
             $count = 0;
             $changes = [
                 'ncm' => $data['ncm'] ?? null,
                 'cfop' => $data['cfop'] ?? null,
+                'cest' => (string) ($data['cfop'] ?? '') === '5405' ? ($data['cest'] ?? null) : null,
             ];
-            if ((string) ($changes['cfop'] ?? '') !== '5405') {
-                $changes['cest'] = null;
-            }
 
             foreach (array_unique($data['selected_tokens']) as $token) {
                 $productId = SecureRouteId::decrypt($token);
