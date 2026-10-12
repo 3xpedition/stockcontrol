@@ -196,12 +196,14 @@ class InventoryController extends Controller
 
     public function bulkUpdate(Request $request)
     {
+        $this->normalizeFiscalCodes($request);
+
         $data = $request->validate([
             'selected_tokens' => ['required', 'array', 'min:1'],
             'selected_tokens.*' => ['required', 'string'],
-            'ncm' => ['nullable', 'string', 'max:20'],
+            'ncm' => ['nullable', 'string', 'max:20', 'regex:/\\A[0-9]+\\z/'],
             'cfop' => ['nullable', 'integer', 'between:0,9999'],
-            'cest' => ['nullable', 'integer', 'between:0,99999999'],
+            'cest' => ['nullable', 'string', 'max:8', 'regex:/\\A[0-9]+\\z/'],
         ]);
 
         if (filled($data['cest'] ?? null) && (string) ($data['cfop'] ?? '') !== '5405') {
@@ -241,12 +243,14 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeFiscalCodes($request);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'code' => ['nullable', 'string', 'max:50'],
             'barcode' => ['nullable', 'string', 'max:80'], 'unit' => ['required', 'string', 'max:12'],
             'quantity' => ['required', 'numeric', 'min:0'], 'minimum_stock' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'], 'sale_price' => ['nullable', 'numeric', 'min:0'],
-            'ncm' => ['nullable', 'string', 'max:20'], 'cfop' => ['nullable', 'integer', 'between:0,9999'], 'cest' => ['nullable', 'integer', 'between:0,99999999'], 'notes' => ['nullable', 'string'],
+            'ncm' => ['nullable', 'string', 'max:20', 'regex:/\\A[0-9]+\\z/'], 'cfop' => ['nullable', 'integer', 'between:0,9999'], 'cest' => ['nullable', 'string', 'max:8', 'regex:/\\A[0-9]+\\z/'], 'notes' => ['nullable', 'string'],
         ]);
         if (filled($data['cest'] ?? null) && (string) ($data['cfop'] ?? '') !== '5405') {
             return back()->withInput()->withErrors(['cest' => 'O CEST só pode ser preenchido quando o CFOP for 5405.']);
@@ -267,12 +271,14 @@ class InventoryController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        $this->normalizeFiscalCodes($request);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'code' => ['nullable', 'string', 'max:50'],
             'barcode' => ['nullable', 'string', 'max:80'], 'unit' => ['required', 'string', 'max:12'],
             'quantity' => ['required', 'numeric', 'min:0'], 'minimum_stock' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'], 'sale_price' => ['nullable', 'numeric', 'min:0'],
-            'ncm' => ['nullable', 'string', 'max:20'], 'cfop' => ['nullable', 'integer', 'between:0,9999'], 'cest' => ['nullable', 'integer', 'between:0,99999999'], 'notes' => ['nullable', 'string'],
+            'ncm' => ['nullable', 'string', 'max:20', 'regex:/\\A[0-9]+\\z/'], 'cfop' => ['nullable', 'integer', 'between:0,9999'], 'cest' => ['nullable', 'string', 'max:8', 'regex:/\\A[0-9]+\\z/'], 'notes' => ['nullable', 'string'],
         ]);
         if (filled($data['cest'] ?? null) && (string) ($data['cfop'] ?? '') !== '5405') {
             return back()->withInput()->withErrors(['cest' => 'O CEST só pode ser preenchido quando o CFOP for 5405.']);
@@ -295,5 +301,19 @@ class InventoryController extends Controller
             $product->increment('quantity', $data['type'] === 'entry' ? $data['quantity'] : -$data['quantity']);
         });
         return back()->with('success', 'Movimentação registrada.');
+    }
+
+    private function normalizeFiscalCodes(Request $request): void
+    {
+        foreach (['ncm', 'cest'] as $field) {
+            $value = $request->input($field);
+
+            if (! is_string($value) && ! is_numeric($value)) {
+                continue;
+            }
+
+            $digits = preg_replace('/[^0-9]/', '', (string) $value);
+            $request->merge([$field => $digits === '' ? null : $digits]);
+        }
     }
 }

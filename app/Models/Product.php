@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\SecureRouteId;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -20,8 +21,21 @@ class Product extends Model
             'sale_price' => 'decimal:2',
             'minimum_stock' => 'decimal:3',
             'cfop' => 'integer',
-            'cest' => 'integer',
         ];
+    }
+
+    protected function ncm(): Attribute
+    {
+        return Attribute::make(
+            set: fn (mixed $value): ?string => $this->numericCode($value),
+        );
+    }
+
+    protected function cest(): Attribute
+    {
+        return Attribute::make(
+            set: fn (mixed $value): ?string => $this->numericCode($value),
+        );
     }
 
     public function isLowStock(): bool
@@ -32,5 +46,16 @@ class Product extends Model
     public function getRouteKey(): string
     {
         return SecureRouteId::encrypt($this->getKey());
+    }
+
+    private function numericCode(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $digits = preg_replace('/[^0-9]/', '', (string) $value);
+
+        return $digits === '' ? null : $digits;
     }
 }

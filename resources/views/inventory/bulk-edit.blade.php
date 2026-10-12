@@ -30,9 +30,9 @@
                 <p>Informe NCM, CFOP e CEST uma vez para atualizar todos os produtos marcados abaixo.</p>
             </div>
             <div class="grid four bulk-tax-fields">
-                <label>NCM<input name="ncm" maxlength="20" placeholder="Ex.: 22030000"></label>
+                <label>NCM<input type="text" inputmode="numeric" name="ncm" placeholder="Ex.: 22030000"></label>
                 <label>CFOP<input type="number" step="1" min="0" max="9999" name="cfop" placeholder="Ex.: 5405"></label>
-                <label>CEST <small>(somente CFOP 5405)</small><input type="number" step="1" min="0" max="99999999" name="cest" placeholder="Ex.: 1234567" disabled></label>
+                <label>CEST <small>(somente CFOP 5405)</small><input type="text" inputmode="numeric" name="cest" placeholder="Ex.: 0300300" disabled></label>
             </div>
             <small class="bulk-cest-note">O CEST só poderá ser aplicado quando o CFOP informado for 5405. Se outro CFOP for aplicado, o CEST dos produtos selecionados será removido.</small>
         </div>
