@@ -1,5 +1,6 @@
 (() => {
     const form = document.querySelector('.search');
+    if (form?.classList.contains('bulk-search')) return;
     const input = form?.querySelector('input[name="q"]');
     const table = document.querySelector('.table-wrap');
     const empty = document.querySelector('.empty');
