@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\SecureRouteId;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -38,6 +39,13 @@ class Product extends Model
         );
     }
 
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (mixed $value): string => $this->sanitizeName($value),
+        );
+    }
+
     public function isLowStock(): bool
     {
         return (float) $this->quantity <= (float) $this->minimum_stock;
@@ -57,5 +65,13 @@ class Product extends Model
         $digits = preg_replace('/[^0-9]/', '', (string) $value);
 
         return $digits === '' ? null : $digits;
+    }
+
+    private function sanitizeName(mixed $value): string
+    {
+        $asciiName = Str::ascii((string) $value);
+        $name = preg_replace('/[^A-Za-z0-9\s]/', '', $asciiName) ?? '';
+
+        return preg_replace('/\s+/', ' ', trim($name)) ?? '';
     }
 }

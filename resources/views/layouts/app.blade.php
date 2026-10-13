@@ -19,4 +19,9 @@
 <script src="/uppercase-product.js"></script>
 <script src="/product-autocomplete.js"></script>
 @stack('scripts')
+<script>
+document.querySelectorAll('.flash.success').forEach((message) => {
+    window.setTimeout(() => message.remove(), 5000);
+});
+</script>
 </body></html>

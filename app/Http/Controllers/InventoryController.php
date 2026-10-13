@@ -131,7 +131,7 @@ class InventoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Produtos');
 
@@ -238,7 +238,7 @@ class InventoryController extends Controller
 
     public function create()
     {
-        return view('inventory.form', ['product' => new Product(), 'movement' => true]);
+        return view('inventory.form', ['product' => new Product, 'movement' => true]);
     }
 
     public function store(Request $request)
@@ -261,7 +261,8 @@ class InventoryController extends Controller
         $data['sale_price'] = $data['sale_price'] ?? 0;
         $data['name'] = mb_strtoupper($data['name'], 'UTF-8');
         $product = Product::create($data);
-        return redirect()->route('inventory.index', ['q' => $product->name])->with('success', 'Produto cadastrado com sucesso.');
+
+        return redirect()->route('inventory.create')->with('success', "Produto {$product->name} cadastrado com sucesso.");
     }
 
     public function edit(Product $product)
@@ -289,17 +290,21 @@ class InventoryController extends Controller
         $data['sale_price'] = $data['sale_price'] ?? 0;
         $data['name'] = mb_strtoupper($data['name'], 'UTF-8');
         $product->update($data);
+
         return back()->with('success', 'Cadastro atualizado com sucesso.');
     }
 
     public function movement(Request $request, Product $product)
     {
         $data = $request->validate(['type' => ['required', 'in:entry,exit'], 'quantity' => ['required', 'numeric', 'gt:0'], 'reason' => ['nullable', 'string', 'max:120'], 'notes' => ['nullable', 'string']]);
-        if ($data['type'] === 'exit' && $data['quantity'] > $product->quantity) return back()->withErrors(['quantity' => 'A saída não pode ser maior que o estoque atual.']);
+        if ($data['type'] === 'exit' && $data['quantity'] > $product->quantity) {
+            return back()->withErrors(['quantity' => 'A saída não pode ser maior que o estoque atual.']);
+        }
         DB::transaction(function () use ($product, $data) {
             StockMovement::create(['product_id' => $product->id, ...$data]);
             $product->increment('quantity', $data['type'] === 'entry' ? $data['quantity'] : -$data['quantity']);
         });
+
         return back()->with('success', 'Movimentação registrada.');
     }
 
